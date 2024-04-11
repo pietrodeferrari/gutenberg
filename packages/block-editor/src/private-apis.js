@@ -77,5 +77,6 @@ lock( privateApis, {
 	selectBlockPatternsKey,
 	requiresWrapperOnCopy,
 	PrivateRichText,
+	reusableBlocksSelectKey,
 	setBackgroundStyleDefaults,
 } );
