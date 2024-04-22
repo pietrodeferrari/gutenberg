@@ -12,11 +12,8 @@ const backgroundImage = {
 			typeof style?.color?.gradient === 'string'
 				? `${ getCSSVarFromStyleValue( style.color.gradient ) }, `
 				: '';
-		if (
-			typeof _backgroundImage === 'object' &&
-			_backgroundImage?.source === 'file' &&
-			_backgroundImage?.url
-		) {
+
+		if ( typeof _backgroundImage === 'object' && _backgroundImage?.url ) {
 			return [
 				{
 					selector: options?.selector,
