@@ -114,19 +114,13 @@ function gutenberg_render_background_support( $block_content, $block ) {
 	return $block_content;
 }
 
-function gutenberg_apply_background_support( $block_type, $block_attributes ) {
-	var_dump( $block_attributes );
-}
-
 // Register the block support.
 WP_Block_Supports::get_instance()->register(
 	'background',
 	array(
 		'register_attribute' => 'gutenberg_register_background_support',
-		'apply'              => 'gutenberg_apply_background_support',
 	)
 );
-
 
 if ( function_exists( 'wp_render_background_support' ) ) {
 	remove_filter( 'render_block', 'wp_render_background_support' );
