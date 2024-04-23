@@ -145,8 +145,8 @@ class WP_Theme_JSON_Gutenberg {
 			'use_default_names' => false,
 			'value_key'         => 'gradient',
 			'css_vars'          => '--wp--preset--gradient--$slug',
-			'classes'           => array( '.has-$slug-gradient-background' => 'background-image' ),
-			'properties'        => array( 'background-image' ),
+			'classes'           => array( '.has-$slug-gradient-background' => 'background' ),
+			'properties'        => array( 'background' ),
 		),
 		array(
 			'path'              => array( 'color', 'duotone' ),
@@ -217,11 +217,9 @@ class WP_Theme_JSON_Gutenberg {
 	 */
 	const PROPERTIES_METADATA = array(
 		'aspect-ratio'                      => array( 'dimensions', 'aspectRatio' ),
+		'background'                        => array( 'color', 'gradient' ),
 		'background-color'                  => array( 'color', 'background' ),
-		'background-image'                  => array(
-			array( 'color', 'gradient' ),
-			array( 'background', 'backgroundImage' ),
-		),
+		'background-image'                  => array( 'background', 'backgroundImage' ),
 		'background-position'               => array( 'background', 'backgroundPosition' ),
 		'background-repeat'                 => array( 'background', 'backgroundRepeat' ),
 		'background-size'                   => array( 'background', 'backgroundSize' ),
@@ -246,6 +244,7 @@ class WP_Theme_JSON_Gutenberg {
 		'border-left-width'                 => array( 'border', 'left', 'width' ),
 		'border-left-style'                 => array( 'border', 'left', 'style' ),
 		'color'                             => array( 'color', 'text' ),
+		'text-align'                        => array( 'typography', 'textAlign' ),
 		'column-count'                      => array( 'typography', 'textColumns' ),
 		'font-family'                       => array( 'typography', 'fontFamily' ),
 		'font-size'                         => array( 'typography', 'fontSize' ),
@@ -438,6 +437,7 @@ class WP_Theme_JSON_Gutenberg {
 			'fontWeight'     => null,
 			'letterSpacing'  => null,
 			'lineHeight'     => null,
+			'textAlign'      => null,
 			'textColumns'    => null,
 			'textDecoration' => null,
 			'textTransform'  => null,
@@ -533,6 +533,7 @@ class WP_Theme_JSON_Gutenberg {
 			'fontWeight'     => null,
 			'letterSpacing'  => null,
 			'lineHeight'     => null,
+			'textAlign'      => null,
 			'textColumns'    => null,
 			'textDecoration' => null,
 			'textTransform'  => null,
@@ -1256,7 +1257,7 @@ class WP_Theme_JSON_Gutenberg {
 			);
 
 			foreach ( $base_styles_nodes as $base_style_node ) {
-				$stylesheet .= $this->get_layout_styles( $base_style_node );
+				$stylesheet .= $this->get_layout_styles( $base_style_node, $types );
 			}
 		}
 
@@ -1464,7 +1465,7 @@ class WP_Theme_JSON_Gutenberg {
 	 * @param array $block_metadata Metadata about the block to get styles for.
 	 * @return string Layout styles for the block.
 	 */
-	protected function get_layout_styles( $block_metadata ) {
+	protected function get_layout_styles( $block_metadata, $types = array() ) {
 		$block_rules = '';
 		$block_type  = null;
 
@@ -1485,7 +1486,7 @@ class WP_Theme_JSON_Gutenberg {
 		$has_fallback_gap_support = ! $has_block_gap_support; // This setting isn't useful yet: it exists as a placeholder for a future explicit fallback gap styles support.
 		$node                     = _wp_array_get( $this->theme_json, $block_metadata['path'], array() );
 		$layout_definitions       = gutenberg_get_layout_definitions();
-		$layout_selector_pattern  = '/^[a-zA-Z0-9\-\.\ *+>:\(\)]*$/'; // Allow alphanumeric classnames, spaces, wildcard, sibling, child combinator and pseudo class selectors.
+		$layout_selector_pattern  = '/^[a-zA-Z0-9\-\.\,\ *+>:\(\)]*$/'; // Allow alphanumeric classnames, spaces, wildcard, sibling, child combinator and pseudo class selectors.
 
 		// Gap styles will only be output if the theme has block gap support, or supports a fallback gap.
 		// Default layout gap styles will be skipped for themes that do not explicitly opt-in to blockGap with a `true` or `false` value.
@@ -1556,7 +1557,7 @@ class WP_Theme_JSON_Gutenberg {
 										$spacing_rule['selector']
 									);
 								} else {
-									$format          = static::ROOT_BLOCK_SELECTOR === $selector ? ':where(%s .%s) %s' : '%s-%s%s';
+									$format          = static::ROOT_BLOCK_SELECTOR === $selector ? ':where(.%2$s) %3$s' : ':where(%1$s-%2$s) %3$s';
 									$layout_selector = sprintf(
 										$format,
 										$selector,
@@ -1610,6 +1611,11 @@ class WP_Theme_JSON_Gutenberg {
 					foreach ( $base_style_rules as $base_style_rule ) {
 						$declarations = array();
 
+						// Skip outputting base styles for flow and constrained layout types if theme doesn't support theme.json. The 'base-layout-styles' type flags this.
+						if ( in_array( 'base-layout-styles', $types, true ) && ( 'default' === $layout_definition['name'] || 'constrained' === $layout_definition['name'] ) ) {
+							continue;
+						}
+
 						if (
 							isset( $base_style_rule['selector'] ) &&
 							preg_match( $layout_selector_pattern, $base_style_rule['selector'] ) &&
@@ -1635,8 +1641,7 @@ class WP_Theme_JSON_Gutenberg {
 							}
 
 							$layout_selector = sprintf(
-								'%s .%s%s',
-								$selector,
+								'.%s%s',
 								$class_name,
 								$base_style_rule['selector']
 							);
@@ -2128,24 +2133,10 @@ class WP_Theme_JSON_Gutenberg {
 			return $declarations;
 		}
 
-		$root_variable_duplicates = array();
+		$properties_to_remove = array();
 
 		foreach ( $properties as $css_property => $value_path ) {
-			$value = null;
-			// @TODO how to deal with multiple values that need to be combined?
-			// background-image: linear-gradient(to right, red, blue), url('foo.png');
-			// Background images don't support opacity yet officially put it after gradient values.
-			// Needs to be handled before the first is_array check below.
-			// Needs to be handled in conjunctions with background styles processing so we get the url value.
-			// This is a placeholder for now - let's abstract this out later.
-			// It's very specific to the `background-image` property, so maybe it can be handled in a separate function in background block supports?
-			// Or value_func like presets? Or in the style engine.
-			if ( is_array( $value_path ) && is_array( $value_path[0] ) ) {
-				$merged_styles = gutenberg_style_engine_get_styles( $styles );
-				$value         = $merged_styles['declarations'][$css_property] ?? null;
-			}
-
-			$value = $value ?? static::get_property_value( $styles, $value_path, $theme_json );
+			$value = static::get_property_value( $styles, $value_path, $theme_json );
 
 			if ( str_starts_with( $css_property, '--wp--style--root--' ) && ( static::ROOT_BLOCK_SELECTOR !== $selector || ! $use_root_padding ) ) {
 				continue;
@@ -2157,18 +2148,28 @@ class WP_Theme_JSON_Gutenberg {
 			}
 
 			if ( str_starts_with( $css_property, '--wp--style--root--' ) && $use_root_padding ) {
-				$root_variable_duplicates[] = substr( $css_property, strlen( '--wp--style--root--' ) );
+				$properties_to_remove[] = substr( $css_property, strlen( '--wp--style--root--' ) );
 			}
 
 			// Look up protected properties, keyed by value path.
 			// Skip protected properties that are explicitly set to `null`.
-			if ( is_array( $value_path ) && ! is_array( $value_path[0] ) ) {
+			if ( is_array( $value_path ) ) {
 				$path_string = implode( '.', $value_path );
 				if (
 					isset( static::PROTECTED_PROPERTIES[ $path_string ] ) &&
 					_wp_array_get( $settings, static::PROTECTED_PROPERTIES[ $path_string ], null ) === null
 				) {
 					continue;
+				}
+			}
+
+			// Processes background styles and merges gradient with `background-image`.
+			if ( 'background' === $value_path[0] && isset( $styles['background'] ) ) {
+				$background_styles       = gutenberg_style_engine_get_styles( $styles );
+				$background_image_styles = ! empty( $background_styles['declarations'][ $css_property ] ) ? $background_styles['declarations'][ $css_property ] : null;
+				if ( $background_image_styles ) {
+					$value                  = $background_image_styles;
+					$properties_to_remove[] = 'background';
 				}
 			}
 
@@ -2207,7 +2208,7 @@ class WP_Theme_JSON_Gutenberg {
 		}
 
 		// If a variable value is added to the root, the corresponding property should be removed.
-		foreach ( $root_variable_duplicates as $duplicate ) {
+		foreach ( $properties_to_remove as $duplicate ) {
 			$discard = array_search( $duplicate, array_column( $declarations, 'name' ), true );
 			if ( is_numeric( $discard ) ) {
 				array_splice( $declarations, $discard, 1 );
@@ -2794,8 +2795,8 @@ class WP_Theme_JSON_Gutenberg {
 		if ( isset( $this->theme_json['settings']['spacing']['blockGap'] ) ) {
 			$block_gap_value = static::get_property_value( $this->theme_json, array( 'styles', 'spacing', 'blockGap' ) );
 			$css            .= ":where(.wp-site-blocks) > * { margin-block-start: $block_gap_value; margin-block-end: 0; }";
-			$css            .= ':where(.wp-site-blocks) > :first-child:first-child { margin-block-start: 0; }';
-			$css            .= ':where(.wp-site-blocks) > :last-child:last-child { margin-block-end: 0; }';
+			$css            .= ':where(.wp-site-blocks) > :first-child { margin-block-start: 0; }';
+			$css            .= ':where(.wp-site-blocks) > :last-child { margin-block-end: 0; }';
 
 			// For backwards compatibility, ensure the legacy block gap CSS variable is still available.
 			$css .= static::ROOT_CSS_PROPERTIES_SELECTOR . " { --wp--style--block-gap: $block_gap_value; }";
@@ -3300,22 +3301,11 @@ class WP_Theme_JSON_Gutenberg {
 			if ( static::is_safe_css_declaration( $declaration['name'], $declaration['value'] ) ) {
 				$path = static::PROPERTIES_METADATA[ $declaration['name'] ];
 
-				if ( is_array( $path ) && is_array( $path[0] ) ) {
-					foreach ( $path as $path_part ) {
-						// Check the value isn't an array before adding so as to not
-						// double up shorthand and longhand styles.
-						$value = _wp_array_get( $input, $path_part, array() );
-						if ( ! is_array( $value ) ) {
-							_wp_array_set( $output, $path_part, $value );
-						}
-					}
-				} else {
-					// Check the value isn't an array before adding so as to not
-					// double up shorthand and longhand styles.
-					$value = _wp_array_get( $input, $path, array() );
-					if ( ! is_array( $value ) ) {
-						_wp_array_set( $output, $path, $value );
-					}
+				// Check the value isn't an array before adding so as to not
+				// double up shorthand and longhand styles.
+				$value = _wp_array_get( $input, $path, array() );
+				if ( ! is_array( $value ) ) {
+					_wp_array_set( $output, $path, $value );
 				}
 			}
 		}
