@@ -10,7 +10,11 @@ import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore } from '../store';
 import { useStyleOverride } from './utils';
 import { useLayout } from '../components/block-list/layout';
-import { GridVisualizer, GridItemResizer } from '../components/grid-visualizer';
+import {
+	GridVisualizer,
+	GridItemResizer,
+	GridItemMovers,
+} from '../components/grid';
 
 function useBlockPropsChildLayoutStyles( { style } ) {
 	const shouldRenderChildLayoutStyles = useSelect( ( select ) => {
@@ -141,30 +145,39 @@ function ChildLayoutControlsPure( { clientId, style, setAttributes } ) {
 		},
 		[ clientId ]
 	);
+
 	if ( parentLayout.type !== 'grid' ) {
 		return null;
 	}
 	if ( ! window.__experimentalEnableGridInteractivity ) {
 		return null;
 	}
+
+	const isManualGrid = !! parentLayout.columnCount;
+
+	function updateLayout( layout ) {
+		setAttributes( {
+			style: {
+				...style,
+				layout: {
+					...style?.layout,
+					...layout,
+				},
+			},
+		} );
+	}
+
 	return (
 		<>
 			<GridVisualizer clientId={ rootClientId } />
-			<GridItemResizer
-				clientId={ clientId }
-				onChange={ ( { columnSpan, rowSpan } ) => {
-					setAttributes( {
-						style: {
-							...style,
-							layout: {
-								...style?.layout,
-								columnSpan,
-								rowSpan,
-							},
-						},
-					} );
-				} }
-			/>
+			<GridItemResizer clientId={ clientId } onChange={ updateLayout } />
+			{ isManualGrid && (
+				<GridItemMovers
+					layout={ style?.layout }
+					parentLayout={ parentLayout }
+					onChange={ updateLayout }
+				/>
+			) }
 		</>
 	);
 }
