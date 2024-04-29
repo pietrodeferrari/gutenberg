@@ -130,10 +130,15 @@ function gutenberg_block_bindings_replace_html( $block_content, $block_name, str
 
 		case 'attribute':
 			$amended_content = new WP_HTML_Tag_Processor( $block_content );
+			$selector        = $block_type->attributes[ $attribute_name ]['selector'];
+			// TODO: build the query from CSS selector when the HTML API supports it.
+			if ( 'figure > a' === $selector ) {
+				$selector = 'a';
+			}
+
 			if ( ! $amended_content->next_tag(
 				array(
-					// TODO: build the query from CSS selector.
-					'tag_name' => $block_type->attributes[ $attribute_name ]['selector'],
+					'tag_name' => $selector,
 				)
 			) ) {
 				return $block_content;
