@@ -121,6 +121,9 @@ function gutenberg_block_bindings_replace_html( $block_content, $block_name, str
 						}
 						return $amended_button->get_updated_html();
 					}
+					if ( 'core/image' === $block_name && 'caption' === $attribute_name ) {
+						return preg_replace( '/(<figcaption[^>]*>)(.*?)(<\/figcaption>)/i', $amended_content->get_updated_html(), $block_content );
+					}
 				} else {
 					$block_reader->seek( 'iterate-selectors' );
 				}
