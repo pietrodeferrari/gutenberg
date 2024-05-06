@@ -191,6 +191,7 @@ function BackgroundImageToolsPanelItem( {
 	onChange,
 	style,
 	inheritedValue,
+	settings,
 } ) {
 	const mediaUpload = useSelect(
 		( select ) => select( blockEditorStore ).getSettings().mediaUpload,
@@ -199,6 +200,13 @@ function BackgroundImageToolsPanelItem( {
 
 	const { id, title, url } = style?.background?.backgroundImage || {
 		...inheritedValue?.background?.backgroundImage,
+	};
+
+	const shouldShowBackgroundAttachmentControls =
+		settings?.background?.backgroundAttachment;
+
+	const attachmentValue = style?.background?.backgroundAttachment || {
+		...inheritedValue?.background?.backgroundAttachment,
 	};
 
 	const replaceContainerRef = useRef();
@@ -275,10 +283,21 @@ function BackgroundImageToolsPanelItem( {
 		};
 	}, [] );
 
+	const toggleScrollWithPage = () =>
+		onChange(
+			setImmutably(
+				style,
+				[ 'background', 'backgroundAttachment' ],
+				attachmentValue === 'fixed' ? 'scroll' : 'fixed'
+			)
+		);
+
 	const hasValue = hasBackgroundImageValue( style );
 
 	return (
-		<ToolsPanelItem
+		<VStack
+			as={ ToolsPanelItem }
+			spacing={ 4 }
 			className="single-column"
 			hasValue={ () => hasValue }
 			label={ __( 'Background image' ) }
@@ -329,7 +348,19 @@ function BackgroundImageToolsPanelItem( {
 					label={ __( 'Drop to upload' ) }
 				/>
 			</div>
-		</ToolsPanelItem>
+			{ shouldShowBackgroundAttachmentControls && (
+				<div className="block-editor-global-styles-background-panel__attachment">
+					<ToggleControl
+						label={ __( 'Scroll with page' ) }
+						checked={ attachmentValue !== 'fixed' }
+						onChange={ toggleScrollWithPage }
+						help={ __(
+							'Whether your image should scroll with the page or stay fixed in place.'
+						) }
+					/>
+				</div>
+			) }
+		</VStack>
 	);
 }
 
@@ -577,6 +608,7 @@ export default function BackgroundPanel( {
 				isShownByDefault={ defaultControls.backgroundImage }
 				style={ value }
 				inheritedValue={ inheritedValue }
+				settings={ settings }
 			/>
 			{ shouldShowBackgroundSizeControls && (
 				<BackgroundSizeToolsPanelItem

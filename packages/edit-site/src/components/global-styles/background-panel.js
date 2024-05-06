@@ -36,12 +36,20 @@ export default function BackgroundPanel() {
 			!! inheritedStyle?.background?.backgroundImage,
 	};
 
+	const updatedSettings = {
+		...settings,
+		background: {
+			...settings.background,
+			backgroundAttachment: true,
+		},
+	};
+
 	return (
 		<StylesBackgroundPanel
 			inheritedValue={ inheritedStyle }
 			value={ style }
 			onChange={ setStyle }
-			settings={ settings }
+			settings={ updatedSettings }
 			headerLabel={ __( 'Image' ) }
 			defaultValues={ BACKGROUND_DEFAULT_VALUES }
 			defaultControls={ defaultControls }

@@ -67,7 +67,7 @@ function gutenberg_render_background_support( $block_content, $block ) {
 	}
 
 	$styles = gutenberg_style_engine_get_styles( array( 'background' => $background_styles ) );
-
+var_dump( $block_attributes['style']['background'] );
 	if ( ! empty( $styles['css'] ) ) {
 		// Inject background styles to the first element, presuming it's the wrapper, if it exists.
 		$tags = new WP_HTML_Tag_Processor( $block_content );
