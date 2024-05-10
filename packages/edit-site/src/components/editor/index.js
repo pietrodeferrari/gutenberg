@@ -7,7 +7,7 @@ import clsx from 'clsx';
  * WordPress dependencies
  */
 import { useDispatch, useSelect } from '@wordpress/data';
-import { Notice } from '@wordpress/components';
+import { Notice, Button } from '@wordpress/components';
 import { useInstanceId } from '@wordpress/compose';
 import {
 	EditorKeyboardShortcutsRegister,
@@ -44,9 +44,11 @@ import {
 } from '../editor-canvas-container';
 import SaveButton from '../save-button';
 import SiteEditorMoreMenu from '../more-menu';
+import SiteIcon from '../site-icon';
 import useEditorIframeProps from '../block-editor/use-editor-iframe-props';
 
 const {
+	BackButton,
 	EditorInterface,
 	ExperimentalEditorProvider: EditorProvider,
 	Sidebar,
@@ -152,6 +154,7 @@ export default function Editor( { isLoading } ) {
 		],
 		[ settings.styles, canvasMode, currentPostIsTrashed ]
 	);
+	const { setCanvasMode } = unlock( useDispatch( editSiteStore ) );
 	const { createSuccessNotice } = useDispatch( noticesStore );
 	const history = useHistory();
 	const onActionPerformed = useCallback(
@@ -222,6 +225,15 @@ export default function Editor( { isLoading } ) {
 					) }
 				</Notice>
 			) }
+			<BackButton>
+				<Button
+					className="edit-site-layout__view-mode-toggle"
+					onClick={ () => setCanvasMode( 'view' ) }
+				>
+					<SiteIcon className="edit-site-layout__view-mode-toggle-icon" />
+				</Button>
+			</BackButton>
+			<SiteEditorMoreMenu />
 			{ isReady && (
 				<EditorProvider
 					post={ postWithTemplate ? contextPost : editedPost }
@@ -231,7 +243,6 @@ export default function Editor( { isLoading } ) {
 					settings={ settings }
 					useSubRegistry={ false }
 				>
-					<SiteEditorMoreMenu />
 					<EditorInterface
 						className={ clsx(
 							'edit-site-editor__interface-skeleton',
