@@ -142,7 +142,6 @@
 .edit-site-layout__view-mode-toggle.components-button {
 	position: relative;
 	color: $white;
-	border-radius: 0;
 	height: $header-height;
 	width: $header-height;
 	overflow: hidden;
@@ -184,7 +183,6 @@
 
 	.edit-site-layout__view-mode-toggle-icon {
 		display: flex;
-		border-radius: $radius-block-ui;
 		height: $grid-unit-80;
 		width: $grid-unit-80;
 		justify-content: center;
