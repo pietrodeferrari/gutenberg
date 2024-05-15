@@ -138,26 +138,31 @@ export function toVdom( root: Node ): Array< ComponentChild > {
 		}
 
 		if ( directives.length ) {
-			props.__directives = directives.reduce(
-				( obj, [ name, ns, value ] ) => {
-					const directiveMatch = directiveParser.exec( name );
-					if ( directiveMatch === null ) {
-						warn( `Invalid directive: ${ name }.` );
-						return obj;
-					}
-					const prefix = directiveMatch[ 1 ] || '';
-					const suffix = directiveMatch[ 2 ] || 'default';
+			const directivesProp: Record<
+				string,
+				Array< {
+					namespace: string | null;
+					value: unknown;
+					suffix: string;
+				} >
+			> = {};
+			for ( const [ name, ns, value ] of directives ) {
+				const directiveMatch = directiveParser.exec( name );
+				if ( directiveMatch === null ) {
+					warn( `Invalid directive: ${ name }.` );
+					break;
+				}
+				const prefix = directiveMatch[ 1 ] || '';
+				const suffix = directiveMatch[ 2 ] || 'default';
 
-					obj[ prefix ] = obj[ prefix ] || [];
-					obj[ prefix ].push( {
-						namespace: ns ?? currentNamespace(),
-						value,
-						suffix,
-					} );
-					return obj;
-				},
-				{}
-			);
+				directivesProp[ prefix ] = directivesProp[ prefix ] || [];
+				directivesProp[ prefix ].push( {
+					namespace: ns ?? currentNamespace(),
+					value,
+					suffix,
+				} );
+			}
+			props.__directives = directivesProp;
 		}
 
 		// @ts-expect-error Fixed in upcoming preact release https://github.com/preactjs/preact/pull/4334
