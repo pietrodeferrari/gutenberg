@@ -28,7 +28,6 @@ import BlogTitle from '../blog-title';
 import PostsPerPage from '../posts-per-page';
 import SiteDiscussion from '../site-discussion';
 import { store as editorStore } from '../../store';
-import TemplateAreas from '../template-areas';
 
 /**
  * Module Constants
@@ -82,7 +81,6 @@ export default function PostSummary( { onActionPerformed } ) {
 										<PostFormatPanel />
 										<PostStickyPanel />
 									</VStack>
-									<TemplateAreas />
 									{ fills }
 								</VStack>
 							) }

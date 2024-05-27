@@ -112,9 +112,7 @@ const SidebarContent = ( {
 				<Tabs.TabPanel tabId={ sidebars.document } focusable={ false }>
 					<PostSummary onActionPerformed={ onActionPerformed } />
 					<PluginDocumentSettingPanel.Slot />
-					{ renderingMode !== 'post-only' && (
-						<TemplateContentPanel />
-					) }
+					<TemplateContentPanel />
 					<PostTransformPanel />
 					<PostTaxonomiesPanel />
 					<PageAttributesPanel />

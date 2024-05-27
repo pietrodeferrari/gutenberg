@@ -19,8 +19,6 @@ import {
 	getRenderingMode,
 	__experimentalGetDefaultTemplatePartAreas,
 } from './selectors';
-import { TEMPLATE_PART_POST_TYPE } from './constants';
-import { getFilteredTemplatePartBlocks } from './utils/get-filtered-template-parts';
 
 const EMPTY_INSERTION_POINT = {
 	rootClientId: undefined,
@@ -110,28 +108,5 @@ export const getPostIcon = createRegistrySelector(
 			}
 			return pageIcon;
 		}
-	}
-);
-
-/**
- * Returns the template parts and their blocks for the current edited template.
- *
- * @param {Object} state Global application state.
- * @return {Array} Template parts and their blocks in an array.
- */
-export const getCurrentTemplateTemplateParts = createRegistrySelector(
-	( select ) => () => {
-		const templateParts = select( coreStore ).getEntityRecords(
-			'postType',
-			TEMPLATE_PART_POST_TYPE,
-			{ per_page: -1 }
-		);
-
-		const clientIds =
-			select( blockEditorStore ).getBlocksByName( 'core/template-part' );
-		const blocks =
-			select( blockEditorStore ).getBlocksByClientId( clientIds );
-
-		return getFilteredTemplatePartBlocks( blocks, templateParts );
 	}
 );
