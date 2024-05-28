@@ -1,13 +1,8 @@
 <?php
 /**
- * Gutenberg Coding Standard.
+ * Gutenberg Coding Standards (GBCS) Bootstrap File.
  *
- * Bootstrap file for running the tests.
- *
- * - Load the PHPCS PHPUnit bootstrap file providing cross-version PHPUnit support.
- *   {@link https://github.com/squizlabs/PHP_CodeSniffer/pull/1384}
- * - Load the Composer autoload file.
- * - Automatically limit the testing to the Gutenberg coding standard tests.
+ * Initializes the environment for running GBCS tests.
  *
  * @package gutenberg/gutenberg-coding-standards
  * @link    https://github.com/WordPress/gutenberg
@@ -18,41 +13,40 @@ if ( ! defined( 'PHP_CODESNIFFER_IN_TESTS' ) ) {
 	define( 'PHP_CODESNIFFER_IN_TESTS', true );
 }
 
-$ds = DIRECTORY_SEPARATOR;
+$dir_separator = DIRECTORY_SEPARATOR;
 
-/*
- * Load the necessary PHPCS files.
- */
-// Get the PHPCS dir from an environment variable.
-$phpcs_dir = dirname( __DIR__ ) . $ds . 'vendor' . $ds . 'squizlabs' . $ds . 'php_codesniffer';
+// Define the path to the PHPCS directory from an environment variable.
+$phpcs_path            = dirname( __DIR__ ) . $dir_separator . 'vendor' . $dir_separator . 'squizlabs' . $dir_separator . 'php_codesniffer';
+$autoload_script_path  = $phpcs_path . $dir_separator . 'autoload.php';
+$bootstrap_script_path = $phpcs_path . $dir_separator . 'tests' . $dir_separator . 'bootstrap.php';
 
-// Try and load the PHPCS autoloader.
-if ( ! file_exists( $phpcs_dir . $ds . 'autoload.php' ) || ! file_exists( $phpcs_dir . $ds . 'tests' . $ds . 'bootstrap.php' ) ) {
-	echo 'Can\'t find PHP_CodeSniffer. Run "composer install".' . PHP_EOL;
-	die( 1 );
+// Attempt to load the PHPCS autoloader.
+if ( ! file_exists( $autoload_script_path ) || ! file_exists( $bootstrap_script_path ) ) {
+	echo 'PHP_CodeSniffer not found. Please run "composer install".' . PHP_EOL;
+	exit( 1 );
 }
 
-require_once $phpcs_dir . $ds . 'autoload.php';
-require_once $phpcs_dir . $ds . 'tests' . $ds . 'bootstrap.php'; // PHPUnit 6.x+ support.
+require_once $autoload_script_path;
+require_once $bootstrap_script_path; // Support for PHPUnit 6.x+.
 
-/*
- * Set the PHPCS_IGNORE_TEST environment variable to ignore tests from other standards.
+/**
+ * Configure the environment to ignore tests from other coding standards.
  */
-$all_coding_standards   = PHP_CodeSniffer\Util\Standards::getInstalledStandards();
-$standards_to_ignore = array( 'Generic' );
+$available_standards = PHP_CodeSniffer\Util\Standards::getInstalledStandards();
+$ignored_standards   = array( 'Generic' );
 
-foreach ( $all_coding_standards as $coding_standard ) {
-	if ( 'Gutenberg' === $coding_standard ) {
+foreach ( $available_standards as $available_standard ) {
+	if ( 'Gutenberg' === $available_standard ) {
 		continue;
 	}
 
-	$standards_to_ignore[] = $coding_standard;
+	$ignored_standards[] = $available_standard;
 }
 
-$standards_to_ignore_as_string = implode( ',', $standards_to_ignore );
+$ignore_standards_string = implode( ',', $ignored_standards );
 
-// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- This is not production code.
-putenv( "PHPCS_IGNORE_TESTS={$standards_to_ignore_as_string}" );
+// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- This is non-production code.
+putenv( "PHPCS_IGNORE_TESTS={$ignore_standards_string}" );
 
-// Clean up.
-unset( $ds, $phpcs_dir, $all_coding_standards, $standards_to_ignore, $coding_standard, $standards_to_ignore_as_string );
+// Cleanup.
+unset( $dir_separator, $phpcs_path, $available_standards, $ignored_standards, $available_standard, $ignore_standards_string );
