@@ -13,6 +13,7 @@ import { createSelector } from '@wordpress/data';
  * Internal dependencies
  */
 import { getValueFromObjectPath } from './utils';
+import { getBlockTypeActiveVariation } from '../utils';
 
 /** @typedef {import('../api/registration').WPBlockVariation} WPBlockVariation */
 /** @typedef {import('../api/registration').WPBlockVariationScope} WPBlockVariationScope */
@@ -237,28 +238,9 @@ export const getBlockVariations = createSelector(
  */
 export function getActiveBlockVariation( state, blockName, attributes, scope ) {
 	const variations = getBlockVariations( state, blockName, scope );
+	const blockType = getBlockType( state, blockName );
 
-	const match = variations?.find( ( variation ) => {
-		if ( Array.isArray( variation.isActive ) ) {
-			const blockType = getBlockType( state, blockName );
-			const attributeKeys = Object.keys( blockType?.attributes || {} );
-			const definedAttributes = variation.isActive.filter(
-				( attribute ) => attributeKeys.includes( attribute )
-			);
-			if ( definedAttributes.length === 0 ) {
-				return false;
-			}
-			return definedAttributes.every(
-				( attribute ) =>
-					attributes[ attribute ] ===
-					variation.attributes[ attribute ]
-			);
-		}
-
-		return variation.isActive?.( attributes, variation.attributes );
-	} );
-
-	return match;
+	return getBlockTypeActiveVariation( variations, blockType, attributes );
 }
 
 /**
