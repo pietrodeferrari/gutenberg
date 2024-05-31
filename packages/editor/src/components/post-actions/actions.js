@@ -17,6 +17,7 @@ import {
 	__experimentalText as Text,
 	__experimentalHStack as HStack,
 	__experimentalVStack as VStack,
+	__experimentalNumberControl as NumberControl,
 } from '@wordpress/components';
 
 /**
@@ -722,6 +723,115 @@ const renamePostAction = {
 	},
 };
 
+function ReorderModal( { items, closeModal, onActionPerformed } ) {
+	const [ item ] = items;
+	const { editEntityRecord, saveEditedEntityRecord } =
+		useDispatch( coreStore );
+	const { createSuccessNotice, createErrorNotice } =
+		useDispatch( noticesStore );
+	const [ orderInput, setOrderInput ] = useState( item.menu_order );
+
+	async function onReorder( event ) {
+		event.preventDefault();
+		if (
+			! Number.isInteger( Number( orderInput ) ) ||
+			orderInput?.trim?.() === ''
+		) {
+			return;
+		}
+		try {
+			await editEntityRecord( 'postType', item.type, item.id, {
+				menu_order: orderInput,
+			} );
+			closeModal();
+			// Persist edited entity.
+			await saveEditedEntityRecord( 'postType', item.type, item.id, {
+				throwOnError: true,
+			} );
+			createSuccessNotice( __( 'Order updated' ), {
+				type: 'snackbar',
+			} );
+			onActionPerformed?.( items );
+		} catch ( error ) {
+			const errorMessage =
+				error.message && error.code !== 'unknown_error'
+					? error.message
+					: __( 'An error occurred while updating the order' );
+			createErrorNotice( errorMessage, {
+				type: 'snackbar',
+			} );
+		}
+	}
+
+	return (
+		<form onSubmit={ onReorder }>
+			<VStack spacing="5" style={ { maxWidth: 350 } }>
+				<div>
+					{ __(
+						'This attribute determines the order of pages in the Pages List block.'
+					) }
+					<p>
+						{ __(
+							'Pages with the same order value will sorted alphabetically. Negative order values are also supported.'
+						) }
+					</p>
+				</div>
+				<NumberControl
+					__next40pxDefaultSize
+					label={ __( 'Order' ) }
+					help={ __( 'Set the page order.' ) }
+					value={ orderInput }
+					onChange={ setOrderInput }
+				/>
+				<HStack justify="right">
+					<Button
+						__next40pxDefaultSize
+						variant="tertiary"
+						onClick={ () => {
+							closeModal();
+						} }
+					>
+						{ __( 'Cancel' ) }
+					</Button>
+					<Button
+						__next40pxDefaultSize
+						variant="primary"
+						type="submit"
+						disabled={
+							! Number.isInteger( Number( orderInput ) ) ||
+							orderInput?.trim?.() === ''
+						}
+					>
+						{ __( 'Save' ) }
+					</Button>
+				</HStack>
+			</VStack>
+		</form>
+	);
+}
+
+function useReorderPagesAction( postType ) {
+	const supportsPageAttributes = useSelect(
+		( select ) => {
+			const { getPostType } = select( coreStore );
+			const postTypeObject = getPostType( postType );
+
+			return !! postTypeObject?.supports?.[ 'page-attributes' ];
+		},
+		[ postType ]
+	);
+
+	return useMemo(
+		() =>
+			supportsPageAttributes && {
+				id: 'reorder-pages',
+				label: __( 'Reorder' ),
+				RenderModal: ReorderModal,
+			},
+		[ supportsPageAttributes ]
+	);
+}
+
 const duplicatePostAction = {
 	id: 'duplicate-post',
 	label: _x( 'Duplicate', 'action label' ),
@@ -1042,6 +1152,7 @@ export function usePostActions( postType, onActionPerformed ) {
 
 	const permanentlyDeletePostAction = usePermanentlyDeletePostAction();
 	const restorePostAction = useRestorePostAction();
+	const reorderPagesAction = useReorderPagesAction( postType );
 	const isTemplateOrTemplatePart = [
 		TEMPLATE_POST_TYPE,
 		TEMPLATE_PART_POST_TYPE,
@@ -1066,6 +1177,7 @@ export function usePostActions( postType, onActionPerformed ) {
 			isPattern && duplicatePatternAction,
 			renamePostAction,
 			isPattern && exportPatternAsJSONAction,
+			reorderPagesAction,
 			isTemplateOrTemplatePart ? resetTemplateAction : restorePostAction,
 			isTemplateOrTemplatePart || isPattern
 				? deletePostAction
