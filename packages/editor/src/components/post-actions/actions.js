@@ -765,7 +765,13 @@ function ReorderModal( { items, closeModal, onActionPerformed } ) {
 
 	return (
 		<form onSubmit={ onReorder }>
-			<VStack spacing="5" style={ { maxWidth: 350 } }>
+			<VStack
+				spacing="5"
+				style={ {
+					// editor styles are not loaded in dataviews so we use an inline style here.
+					maxWidth: 384 - 32 - 32 - 6 - 6,
+				} }
+			>
 				<div>
 					{ __(
 						'This attribute determines the order of pages in the Pages List block.'
