@@ -18,3 +18,15 @@ export const getValueFromObjectPath = ( object, path, defaultValue ) => {
 	} );
 	return value ?? defaultValue;
 };
+
+export function matchesAttributes( blockAttributes, variation ) {
+	return Object.entries( variation ).every( ( [ key, value ] ) => {
+		if (
+			typeof value === 'object' &&
+			typeof blockAttributes[ key ] === 'object'
+		) {
+			return matchesAttributes( blockAttributes[ key ], value );
+		}
+		return blockAttributes[ key ] === value;
+	} );
+}

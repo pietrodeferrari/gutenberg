@@ -11,7 +11,7 @@ import { createSelector } from '@wordpress/data';
 /**
  * Internal dependencies
  */
-import { getValueFromObjectPath } from './utils';
+import { getValueFromObjectPath, matchesAttributes } from './utils';
 
 /** @typedef {import('../api/registration').WPBlockVariation} WPBlockVariation */
 /** @typedef {import('../api/registration').WPBlockVariationScope} WPBlockVariationScope */
@@ -269,10 +269,21 @@ export function getActiveBlockVariation( state, blockName, attributes, scope ) {
 				if ( variationAttributeValue === undefined ) {
 					return false;
 				}
-				return (
-					variationAttributeValue ===
-					getValueFromObjectPath( attributes, attribute )
+				const blockAttributeValue = getValueFromObjectPath(
+					attributes,
+					attribute
 				);
+				// If the attribute value is an object, we need to compare its properties.
+				if (
+					variationAttributeValue !== null &&
+					typeof variationAttributeValue === 'object'
+				) {
+					return matchesAttributes(
+						blockAttributeValue,
+						variationAttributeValue
+					);
+				}
+				return variationAttributeValue === blockAttributeValue;
 			} );
 			if ( isMatch && definedAttributesLength > maxMatchedAttributes ) {
 				match = variation;
