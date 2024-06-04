@@ -762,7 +762,9 @@ function ReorderModal( { items, closeModal, onActionPerformed } ) {
 			} );
 		}
 	}
-
+	const saveIsDisabled =
+		! Number.isInteger( Number( orderInput ) ) ||
+		orderInput?.trim?.() === '';
 	return (
 		<form onSubmit={ onReorder }>
 			<VStack
@@ -803,10 +805,8 @@ function ReorderModal( { items, closeModal, onActionPerformed } ) {
 						__next40pxDefaultSize
 						variant="primary"
 						type="submit"
-						disabled={
-							! Number.isInteger( Number( orderInput ) ) ||
-							orderInput?.trim?.() === ''
-						}
+						disabled={ saveIsDisabled }
+						__experimentalIsFocusable={ ! saveIsDisabled }
 					>
 						{ __( 'Save' ) }
 					</Button>
